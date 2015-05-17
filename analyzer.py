@@ -83,6 +83,7 @@ if show_gui:
     root.title("Google Data Analysis")
     frame_top = Frame(root)
     textfield = Entry(frame_top)
+    textfield.bind("<Return>", lambda event: filter(textfield.get()))
     filter_button = Button(frame_top, text='Filter', command=lambda: filter(textfield.get()))
     reset_button = Button(frame_top, text='Reset', command=lambda: filter(None))  # TODO: reset textfield
     expand_button = Button(frame_top, text='Expand All', command=lambda: tree.item("", open=True))
