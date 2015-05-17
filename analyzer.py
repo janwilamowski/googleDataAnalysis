@@ -4,10 +4,10 @@ Outputs a breakdown by query type and year/month statistic.
 
 TODO:
 - analyze "event" structure for additional information -> Maps search?
-- GUI displaying tree: year | month | day/query | details -> filterable
+- GUI displaying tree: year | month | day/query | details
 - cluster search terms -> how?
-- filter breakdown by search terms
 - proper CLI with arguments
+- switch to grid layout
 - split up modules for data processing, GUI and CLI
 """
 
@@ -16,6 +16,7 @@ import json
 import glob
 from collections import defaultdict
 import time
+from copy import copy
 show_gui = True
 
 decoder = json.JSONDecoder()
@@ -37,7 +38,7 @@ for filename in glob.glob("./Searches/Searches/*.json"):
             timestamp = ids[-1]["timestamp_usec"][:10]
             query_time = time.localtime(float(timestamp))
             query_times[query_time.tm_year][query_time.tm_mon] += 1
-            query_tree[query_time.tm_year][query_time.tm_mon].append(query["query_text"])
+            query_tree[query_time.tm_year][query_time.tm_mon].append(query["query_text"].lower())
             if len(ids) > 1 and "type" in ids[0]:
                 query_types[ids[0]["type"]] += 1
             else:
@@ -48,10 +49,29 @@ for filename in glob.glob("./Searches/Searches/*.json"):
                         query_terms[term] += 1
 
 def filter(query):
-    # TODO: filter & redraw tree
-    if query is not None:
-        print(query)
+    query =query.strip().lower()
+    global working_tree
+    # TODO: redraw tree
+    if query is not None and len(query) > 0:
+        print("filtering by " + query)
+        working_tree = filter_nested_dict(query_tree, query)
+        print(working_tree)
+    else:
+        print("resetting filter")
+        working_tree = {}  # TODO: just seeing if that works reset to query_tree
 
+def filter_nested_dict(node, search_term):
+    if isinstance(node, list):
+        return [item for item in node if search_term in item]
+    else:
+        dupe_node = {}
+        for key, val in node.iteritems():
+            cur_node = filter_nested_dict(val, search_term)
+            if cur_node:
+                dupe_node[key] = cur_node
+        return dupe_node or None
+
+working_tree = copy(query_tree)
 # TODO: month names should be converted automatically
 months = {1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June", 7: "July", 8: "August", 9: "September", 10: "October", 11: "November", 12: "December"}
 top_terms = sorted(query_terms.items(), key=lambda t: t[1], reverse=True)
@@ -63,8 +83,8 @@ if show_gui:
     root.title("Google Data Analysis")
     frame_top = Frame(root)
     textfield = Entry(frame_top)
-    filter_button = Button(frame_top, text='Filter', command=lambda: print(textfield.get()))
-    reset_button = Button(frame_top, text='Reset', command=lambda: filter(None))
+    filter_button = Button(frame_top, text='Filter', command=lambda: filter(textfield.get()))
+    reset_button = Button(frame_top, text='Reset', command=lambda: filter(None))  # TODO: reset textfield
     expand_button = Button(frame_top, text='Expand All', command=lambda: tree.item("", open=True))
 
     frame_bottom = Frame(root)
@@ -93,7 +113,7 @@ if show_gui:
         year_item = tree.insert("", 0, text=year, values=(sum(year_data.values())))
         for month, count in sorted(year_data.items()):
             month_item = tree.insert(year_item, "end", "{y}_{m}".format(y=year, m=month), text=months[month], values=(count))
-            for query in query_tree[year][month]:
+            for query in working_tree[year][month]:
                 tree.insert(month_item, "end", text=query)
     tree.pack(side=LEFT, expand=1, fill="both")
     frame_right.pack(side=RIGHT, expand=1, fill="y")
