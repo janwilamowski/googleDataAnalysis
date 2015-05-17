@@ -87,6 +87,7 @@ if show_gui:
     filter_button = Button(frame_top, text='Filter', command=lambda: filter(textfield.get()))
     reset_button = Button(frame_top, text='Reset', command=lambda: filter(None))  # TODO: reset textfield
     expand_button = Button(frame_top, text='Expand All', command=lambda: tree.item("", open=True))
+    collapse_button = Button(frame_top, text='Collapse All', command=lambda: tree.item("", open=False))
 
     frame_bottom = Frame(root)
     frame_right = Frame(frame_bottom, width=100)
@@ -102,6 +103,7 @@ if show_gui:
     filter_button.pack(side=LEFT)
     reset_button.pack(side=LEFT)
     expand_button.pack(side=LEFT)
+    collapse_button.pack(side=LEFT)
     frame_top.pack(side=TOP)
 
     tree = ttk.Treeview(frame_bottom)
