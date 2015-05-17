@@ -7,7 +7,6 @@ TODO:
 - GUI displaying tree: year | month | day/query | details
 - cluster search terms -> how?
 - proper CLI with arguments
-- switch to grid layout
 - split up modules for data processing, GUI and CLI
 """
 
@@ -81,36 +80,39 @@ if show_gui:
     import ttk
     root = Tk()
     root.title("Google Data Analysis")
-    frame_top = Frame(root)
-    textfield = Entry(frame_top)
+    textfield = Entry(root)
     textfield.bind("<Return>", lambda event: filter(textfield.get()))
-    filter_button = Button(frame_top, text='Filter', command=lambda: filter(textfield.get()))
-    reset_button = Button(frame_top, text='Reset', command=lambda: filter(None))  # TODO: reset textfield
-    expand_button = Button(frame_top, text='Expand All', command=lambda: tree.item("", open=True))
-    collapse_button = Button(frame_top, text='Collapse All', command=lambda: tree.item("", open=False))
+    textfield.grid(row=0, column=0)
+    filter_button = Button(root, text='Filter', command=lambda: filter(textfield.get()))
+    filter_button.grid(row=0, column=1)
+    reset_button = Button(root, text='Reset', command=lambda: filter(None))  # TODO: reset textfield
+    reset_button.grid(row=0, column=2)
+    expand_button = Button(root, text='Expand All', command=lambda: tree.item("", open=True))
+    expand_button.grid(row=0, column=3)
+    collapse_button = Button(root, text='Collapse All', command=lambda: tree.item("", open=False))
+    collapse_button.grid(row=0, column=4)
 
-    frame_bottom = Frame(root)
-    frame_right = Frame(frame_bottom, width=100)
-    top_terms_label = Label(frame_right, text="Top Terms")
-    top_terms_select = Text(frame_right)
+    top_terms_label = Label(root, text="Top Terms")
+    top_terms_label.grid(row=0, column=5)
+    top_terms_select = Text(root)
     top_terms_select.insert(INSERT, "\n".join(u"{term}: {count}".format(term=term[0], count=term[1]) for term in top_terms))
     # TODO: add double click handler on top terms to filter: top_terms_select.bind("<Double-Button-1>")
-    top_terms_label.pack(side=TOP)
-    top_terms_select.pack(side=BOTTOM, fill="y", expand=1)
+    top_terms_select.grid(row=1, column=5, sticky=N+S)
     # TODO: add scroll bar
 
-    textfield.pack(side=LEFT)
-    filter_button.pack(side=LEFT)
-    reset_button.pack(side=LEFT)
-    expand_button.pack(side=LEFT)
-    collapse_button.pack(side=LEFT)
-    frame_top.pack(side=TOP)
-
-    tree = ttk.Treeview(frame_bottom)
+    tree = ttk.Treeview(root)
     #tree.heading('0', text="date")  # TODO: how to set heading of tree?
     tree["columns"]=("col1")
     tree.column("col1", width=100)
     tree.heading("col1", text="query count")
+    tree.grid(row=1, column=0, columnspan=5, sticky=N+S+E+W)
+
+    root.rowconfigure(1, weight=1)
+    root.columnconfigure(0, weight=1)
+    root.columnconfigure(1, weight=1)
+    root.columnconfigure(2, weight=1)
+    root.columnconfigure(3, weight=1)
+    root.columnconfigure(4, weight=1)
 
     for year, year_data in query_times.items():
         year_item = tree.insert("", 0, text=year, values=(sum(year_data.values())))
@@ -118,9 +120,6 @@ if show_gui:
             month_item = tree.insert(year_item, "end", "{y}_{m}".format(y=year, m=month), text=months[month], values=(count))
             for query in working_tree[year][month]:
                 tree.insert(month_item, "end", text=query)
-    tree.pack(side=LEFT, expand=1, fill="both")
-    frame_right.pack(side=RIGHT, expand=1, fill="y")
-    frame_bottom.pack(side=BOTTOM, fill="both", expand=1)
     root.mainloop()
 else:
     print(u"total queries = {qcount}, {tcount} distinct terms".format(qcount=total_queries, tcount=len(query_terms)))
